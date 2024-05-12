@@ -74,7 +74,10 @@ executable crispv
     build-depends:
         base ^>=4.19.0.0,
         cassava ^>=0.5.3.1,
-        happstack-server ^>=7.9.0
+        happstack-server ^>=7.9.0,
+        bytestring ^>=0.12.1.0,
+        text ^>=2.1.1,
+        vector ^>=0.13.1.0
 
     -- Directories containing source files.
     hs-source-dirs:   app
