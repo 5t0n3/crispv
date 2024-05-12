@@ -7,10 +7,10 @@ import Data.ByteString.Builder (stringUtf8, toLazyByteString)
 import Data.Csv
 import Data.Text (Text)
 import Data.Vector (Vector)
-import Data.Vector as V
+import qualified Data.Vector as V
 import Happstack.Server (Response, ServerPart, dir, look, nullConf, ok, simpleHTTP, toResponse)
 import Text.Blaze ((!))
-import Text.Blaze.Html5 as H
+import qualified Text.Blaze.Html5 as H
 
 type TextRecord = Vector Text
 
@@ -27,12 +27,16 @@ getTableWidth csvRecords = if allSameLength then Right length else Left "not all
     initialAcc = case firstRec of
       Just vec -> (True, V.length vec)
       Nothing -> (False, 0)
-    (allSameLength, length) = foldl' widthReducer initialAcc csvRecords
+    (allSameLength, length) = V.foldl' widthReducer initialAcc csvRecords
+
+-- Converts a record into a row (<tr>), where each field is placed in a <td> element
+recordToRow :: TextRecord -> H.Html
+recordToRow = H.tr . mapM_ (H.td . H.toHtml)
 
 csvToTable :: Vector TextRecord -> Either String H.Html
 csvToTable records = do
   width <- getTableWidth records
-  return $ H.docTypeHtml $ H.p "worked!"
+  return $ H.table $ forM_ records recordToRow
 
 csvPart :: ServerPart Response
 csvPart = do
