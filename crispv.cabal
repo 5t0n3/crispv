@@ -35,7 +35,7 @@ homepage:           https://github.com/5t0n3/crispv
 license:            LicenseRef-OQL-1.1
 
 -- The file containing the license text.
-license-file:       LICENSE
+license-file:       LICENSE.md
 
 -- The package author(s).
 author:             5t0n3
@@ -54,12 +54,12 @@ extra-doc-files:    CHANGELOG.md
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
 -- extra-source-files:
 
-common warnings
-    ghc-options: -Wall
+common flags
+    ghc-options: -Wall -threaded
 
 executable crispv
-    -- Import common warning flags.
-    import:           warnings
+    -- Import common GHC flags.
+    import:           flags
 
     -- .hs or .lhs file containing the Main module.
     main-is:          Main.hs
