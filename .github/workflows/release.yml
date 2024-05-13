@@ -1,0 +1,55 @@
+name: Build & push container image on release
+
+on:
+  release:
+    types: [published]
+
+env:
+  IMAGE_REPO: ghcr.io/${{ github.repository }}
+
+jobs:
+  build-and-push-container:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+      attestations: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          echo "$GITHUB_TOKEN" | docker login -u "$REGISTRY_USER" --password-stdin ghcr.io
+
+      - name: Build & push container image
+        id: build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # build image
+          docker image build . -t "${IMAGE_REPO}:latest" -f Containerfile
+
+          # also tag with release version
+          docker image tag "${IMAGE_REPO}:latest" "${IMAGE_REPO}:${GITHUB_REF_NAME}"
+
+          # push both latest & release image tags
+          docker image push -a "$IMAGE_REPO"
+
+          # also save image digest for attestation purposes
+          # I think {{.Id}} is the proper way to get the digest?? it's {{.Digest}} for podman :P
+          echo -n "digest=" >> "$GITHUB_OUTPUT"
+          docker inspect "${IMAGE_REPO}:latest" -f "{{.Id}}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate & push provenance attestation
+        uses: actions/attest-build-provenance@v1.1.0
+        with:
+          subject-name: ${{ env.IMAGE_REPO }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
