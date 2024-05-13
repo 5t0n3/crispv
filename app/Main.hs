@@ -11,37 +11,42 @@ import qualified Text.Blaze.Html5 as H
 
 type TextRecord = Vector Text
 
+-- Convenience function for converting a Maybe to an Either String
+maybeToEither :: String -> Maybe a -> Either String a
+maybeToEither _ (Just val) = Right val
+maybeToEither msg Nothing = Left msg
+
 -- Ensures all CSV records in the given record are of the same length
--- There must also be at least one record
 consistentLength :: Vector TextRecord -> Bool
-consistentLength csvRecords = not (V.null csvRecords) && all ((== firstLen) . V.length) csvRecords
+consistentLength csvRecords = all ((== firstLen) . V.length) csvRecords
   where
     -- This is only evaluated if V.null returns false, since (&&) is lazy :)
     firstLen = V.length $ (V.!) csvRecords 0
 
--- Converts a record into a <tr>, where each field is wrapped with a <td> element
-recordToRow :: TextRecord -> H.Html
-recordToRow = H.tr . mapM_ (H.td . H.toHtml)
+renderTable :: (TextRecord, Vector TextRecord) -> H.Html
+renderTable (header, tbody) = H.table $ toRow H.th header >> forM_ tbody (toRow H.td)
+  where
+    toRow :: (H.Html -> H.Html) -> TextRecord -> H.Html
+    toRow innerEl = H.tr . mapM_ (innerEl . H.toHtml)
 
 -- Renders CSV data into a table, ensuring it is nonempty & each row has the same length
 csvToTable :: Vector TextRecord -> Either String H.Html
 csvToTable records
-  | consistentLength records = Right renderedTable
+  | enoughRecords && consistentLength records = renderTable <$> splitRecords
   | otherwise = Left "bad records"
   where
-    -- TODO: header (index + V.slice?)
-    renderedTable = H.table $ forM_ records recordToRow
+    enoughRecords = V.length records >= 2
+    toRow :: (H.Html -> H.Html) -> TextRecord -> H.Html
+    toRow innerElement = H.tr . mapM_ (innerElement . H.toHtml)
+    splitRecords = maybeToEither "not enough records" $ V.uncons records
 
 -- Handler for /render route, which does the HTML rendering of CSV
 renderPart :: ServerPart Response
 renderPart = do
   req <- askRq
   rawCsv <- takeRequestBody req
-  -- TODO: header included? (for table)
   -- yay monad conversions :P
-  let csvEither = case rawCsv of
-        Just body -> Right $ unBody body
-        Nothing -> Left ""
+  let csvEither = unBody <$> maybeToEither "body not present" rawCsv
   case csvEither >>= decode NoHeader >>= csvToTable of
     Left _ -> mzero
     Right table -> ok $ toResponse table
