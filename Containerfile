@@ -13,3 +13,6 @@ RUN cabal install
 
 # and run it :)
 CMD ["crispv"]
+
+# the server listens on port 8000
+EXPOSE 8000
