@@ -12,22 +12,13 @@ import qualified Text.Blaze.Html5 as H
 
 type TextRecord = Vector Text
 
--- Reducing function for consistentLength
-widthReducer :: (Bool, Int) -> TextRecord -> (Bool, Int)
-widthReducer (consistent, prevLength) record = (consistent && len == prevLength, len)
-  where
-    len = V.length record
-
 -- Ensures all CSV records in the given record are of the same length
+-- There must also be at least one record
 consistentLength :: Vector TextRecord -> Bool
-consistentLength csvRecords = allSameLength
+consistentLength csvRecords = not (V.null csvRecords) && all ((== firstLen) . V.length) csvRecords
   where
-    firstRec = (V.!?) csvRecords 0
-    initialAcc = case firstRec of
-      Just vec -> (True, V.length vec)
-      -- if there aren't any records, treat that as a bad request
-      Nothing -> (False, 0)
-    (allSameLength, length) = V.foldl' widthReducer initialAcc csvRecords
+    -- This is only evaluated if V.null returns false, since (&&) is lazy :)
+    firstLen = V.length $ (V.!) csvRecords 0
 
 -- Converts a record into a <tr>, where each field is wrapped with a <td> element
 recordToRow :: TextRecord -> H.Html
