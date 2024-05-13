@@ -1,13 +1,12 @@
 module Main where
 
-import Control.Monad
-import Data.ByteString.Builder (stringUtf8, toLazyByteString)
-import Data.Csv
+import Control.Monad (forM_, mapM_, msum, mzero)
+import Data.Csv (HasHeader (NoHeader), decode)
 import Data.Text (Text)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import Happstack.Server (Response, ServerPart, badRequest, dir, look, notFound, nullConf, ok, simpleHTTP, toResponse)
-import Text.Blaze ((!))
+import Happstack.Server (Method (POST), Response, ServerPart, askRq, badRequest, dir, look, method, notFound, nullConf, ok, simpleHTTP, takeRequestBody, toResponse, unBody)
+-- import Text.Blaze ((!))
 import qualified Text.Blaze.Html5 as H
 
 type TextRecord = Vector Text
@@ -34,15 +33,16 @@ csvToTable records
     renderedTable = H.table $ forM_ records recordToRow
 
 -- Handler for /render route, which does the HTML rendering of CSV
-csvPart :: ServerPart Response
-csvPart = do
-  csvStr <- look "csvdata"
-  -- decode takes a ByteString so we have to do the conversion manually
-  let csvBytes = toLazyByteString $ stringUtf8 csvStr
-      -- TODO: header included? (for table)
-      parsed = decode NoHeader csvBytes
-  -- TODO: monadic way to do this?
-  case parsed >>= csvToTable of
+renderPart :: ServerPart Response
+renderPart = do
+  req <- askRq
+  rawCsv <- takeRequestBody req
+  -- TODO: header included? (for table)
+  -- yay monad conversions :P
+  let csvEither = case rawCsv of
+        Just body -> Right $ unBody body
+        Nothing -> Left ""
+  case csvEither >>= decode NoHeader >>= csvToTable of
     Left _ -> mzero
     Right table -> ok $ toResponse table
 
@@ -50,9 +50,9 @@ main :: IO ()
 main =
   simpleHTTP nullConf $
     msum
-      [ dir "render" csvPart,
-        -- if previous route failed, then something went wrong when rendering the CSV
-        dir "render" $ badRequest $ toResponse "invalid CSV",
+      [ method POST >> dir "render" renderPart,
+        -- if previous route failed, then something went wrong when rendering the CSV (or wrong method/etc.)
+        dir "render" $ badRequest $ toResponse "bad request",
         -- default to not found for non-render routes
         notFound $ toResponse "not found"
       ]
