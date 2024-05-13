@@ -30,8 +30,6 @@ jobs:
 
       - name: Build & push container image
         id: build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # build image
           docker image build . -t "${IMAGE_REPO}:latest" -f Containerfile
