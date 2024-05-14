@@ -41,9 +41,10 @@ jobs:
           docker image push -a "$IMAGE_REPO"
 
           # also save image digest for attestation purposes
-          # I think {{.Id}} is the proper way to get the digest?? it's {{.Digest}} for podman :P
           echo -n "digest=" >> "$GITHUB_OUTPUT"
-          docker inspect "${IMAGE_REPO}:latest" -f "{{.Id}}" >> "$GITHUB_OUTPUT"
+
+          # RepoDigest format is $IMAGE_REPO@sha256:abc..., so we have to extract the digest itself
+          docker inspect "${IMAGE_REPO}:latest" -f "{{ index .RepoDigests 0 }}" | cut -d "@" -f 2 >> "$GITHUB_OUTPUT"
 
       - name: Generate & push provenance attestation
         uses: actions/attest-build-provenance@v1.1.0
