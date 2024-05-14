@@ -23,9 +23,9 @@ maybeToEither msg Nothing = Left msg
 consistentLength :: Vector TextRecord -> Bool
 consistentLength csvRecords = all ((== firstLen) . V.length) csvRecords
   where
-    -- This is only evaluated if V.null returns false, since (&&) is lazy :)
     firstLen = V.length $ V.head csvRecords
 
+-- Takes a (header, [body]) pair and renders it as an HTML table
 renderTable :: (TextRecord, Vector TextRecord) -> H.Html
 renderTable (header, tbody) = H.table ! class_ "crispv-table" $ toRow H.th header >> forM_ tbody (toRow H.td)
   where
