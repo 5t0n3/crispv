@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import Control.Monad (forM_, mapM_, msum, mzero)
@@ -6,8 +8,9 @@ import Data.Text (Text)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Happstack.Server (Method (POST), Response, ServerPart, askRq, badRequest, dir, look, method, notFound, nullConf, ok, simpleHTTP, takeRequestBody, toResponse, unBody)
--- import Text.Blaze ((!))
+import Text.Blaze ((!))
 import qualified Text.Blaze.Html5 as H
+import Text.Blaze.Html5.Attributes (class_)
 
 type TextRecord = Vector Text
 
@@ -18,13 +21,13 @@ maybeToEither msg Nothing = Left msg
 
 -- Ensures all CSV records in the given record are of the same length
 consistentLength :: Vector TextRecord -> Bool
-consistentLength csvRecords = all ((== firstLen) . V.length) csvRecords
+consistentLength = all ((== firstLen) . V.length)
   where
     -- This is only evaluated if V.null returns false, since (&&) is lazy :)
-    firstLen = V.length $ (V.!) csvRecords 0
+    firstLen = V.length $ V.head csvRecords
 
 renderTable :: (TextRecord, Vector TextRecord) -> H.Html
-renderTable (header, tbody) = H.table $ toRow H.th header >> forM_ tbody (toRow H.td)
+renderTable (header, tbody) = H.table ! class_ "crispv-table" $ toRow H.th header >> forM_ tbody (toRow H.td)
   where
     toRow :: (H.Html -> H.Html) -> TextRecord -> H.Html
     toRow innerEl = H.tr . mapM_ (innerEl . H.toHtml)
@@ -36,8 +39,6 @@ csvToTable records
   | otherwise = Left "bad records"
   where
     enoughRecords = V.length records >= 2
-    toRow :: (H.Html -> H.Html) -> TextRecord -> H.Html
-    toRow innerElement = H.tr . mapM_ (innerElement . H.toHtml)
     splitRecords = maybeToEither "not enough records" $ V.uncons records
 
 -- Handler for /render route, which does the HTML rendering of CSV
@@ -57,7 +58,7 @@ main =
     msum
       [ method POST >> dir "render" renderPart,
         -- if previous route failed, then something went wrong when rendering the CSV (or wrong method/etc.)
-        dir "render" $ badRequest $ toResponse "bad request",
+        dir "render" $ badRequest $ toResponse ("bad request" :: Text),
         -- default to not found for non-render routes
-        notFound $ toResponse "not found"
+        notFound $ toResponse ("not found" :: Text)
       ]
