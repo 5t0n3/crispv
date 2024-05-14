@@ -21,7 +21,7 @@ maybeToEither msg Nothing = Left msg
 
 -- Ensures all CSV records in the given record are of the same length
 consistentLength :: Vector TextRecord -> Bool
-consistentLength = all ((== firstLen) . V.length)
+consistentLength csvRecords = all ((== firstLen) . V.length) csvRecords
   where
     -- This is only evaluated if V.null returns false, since (&&) is lazy :)
     firstLen = V.length $ V.head csvRecords
