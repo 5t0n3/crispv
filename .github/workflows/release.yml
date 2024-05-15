@@ -32,7 +32,7 @@ jobs:
         id: build
         run: |
           # build image
-          docker image build . -t "${IMAGE_REPO}:latest" -f Containerfile
+          docker image build . -t "${IMAGE_REPO}:latest"
 
           # also tag with release version
           docker image tag "${IMAGE_REPO}:latest" "${IMAGE_REPO}:${GITHUB_REF_NAME}"
