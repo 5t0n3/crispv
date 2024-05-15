@@ -72,7 +72,7 @@ executable crispv
 
     -- Other library packages from which modules are imported.
     build-depends:
-        base ^>=4.19.0.0,
+        base ^>=4.20.0.0,
         cassava ^>=0.5.3.1,
         happstack-server ^>=7.9.0,
         text ^>=2.1.1,

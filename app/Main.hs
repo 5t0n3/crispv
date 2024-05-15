@@ -2,12 +2,12 @@
 
 module Main where
 
-import Control.Monad (forM_, mapM_, msum, mzero)
+import Control.Monad (forM_, msum, mzero)
 import Data.Csv (HasHeader (NoHeader), decode)
 import Data.Text (Text)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import Happstack.Server (Method (POST), Response, ServerPart, askRq, badRequest, dir, look, method, notFound, nullConf, ok, simpleHTTP, takeRequestBody, toResponse, unBody)
+import Happstack.Server (Method (POST), Response, ServerPart, askRq, badRequest, dir, method, notFound, nullConf, ok, simpleHTTP, takeRequestBody, toResponse, unBody)
 import Text.Blaze ((!))
 import qualified Text.Blaze.Html5 as H
 import Text.Blaze.Html5.Attributes (class_)
