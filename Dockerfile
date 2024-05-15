@@ -38,7 +38,7 @@ WORKDIR /srv/crispv
 COPY --from=builder /root/.local/bin/crispv crispv
 
 # and run it on container start :)
-CMD ["crispv"]
+CMD ["/srv/crispv/crispv"]
 
 # the server listens on port 8000
 EXPOSE 8000
